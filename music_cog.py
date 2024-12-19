@@ -28,7 +28,6 @@ class music_cog(commands.Cog):
 
     async def play_music(self, ctx):
         if len(self.queue) > 0:
-            self.is_playing = True
             m_url = self.queue[0][0]['source']
             if self.vc is None or not self.vc.is_connected():
                 try:
@@ -40,10 +39,15 @@ class music_cog(commands.Cog):
                     return
             elif self.vc.channel != self.queue[0][1]:
                 self.vc = await self.vc.move_to(self.queue[0][1])
-            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
-            if ctx:
-                await ctx.send(f"Now playing: {self.queue[0][0]['title']}")
-            self.queue.pop(0)
+            if not self.vc.is_playing():
+                self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
+                self.is_playing = True
+                if ctx:
+                    await ctx.send(f"Now playing: {self.queue[0][0]['title']}")
+                self.queue.pop(0)
+            else:
+                if ctx:
+                    await ctx.send("Already playing audio. Skipping redundant play request.")
         else:
             self.is_playing = False
             if ctx:
