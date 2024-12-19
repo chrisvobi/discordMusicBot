@@ -19,13 +19,6 @@ COMMANDS:
 
         self.text_channel_text = []
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        for guild in self.bot.guilds:
-            for channel in guild.text_channels:
-                self.text_channel_text.append(channel)
-        await self.send_to_all(self.help_message)
-
     async def send_to_all(self, message):
         for channel in self.text_channel_text:
             await channel.send(message)
