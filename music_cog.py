@@ -21,31 +21,33 @@ class music_cog(commands.Cog):
     def play_next(self):
         if len(self.queue) > 0:
             self.is_playing = True
-            m_url = self.queue[0][0]['source']
-            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.self.bot.loop.create_task(self.play_next()))
-            self.queue.pop(0)
+            self.bot.loop.create_task(self.play_music(None))
         else:
             self.is_playing = False
+
 
     async def play_music(self, ctx):
         if len(self.queue) > 0:
             self.is_playing = True
             m_url = self.queue[0][0]['source']
-            if self.vc == None or not self.vc.is_connected():
+            if self.vc is None or not self.vc.is_connected():
                 try:
                     self.vc = await self.queue[0][1].connect()
                 except Exception as e:
-                    await ctx.send(f"Failed to join the channel: str{e}")
-                    self.is_playing = True
+                    if ctx:
+                        await ctx.send(f"Failed to join the channel: {str(e)}")
+                    self.is_playing = False
                     return
             elif self.vc.channel != self.queue[0][1]:
                 self.vc = await self.vc.move_to(self.queue[0][1])
             self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
-            await ctx.send(f"Now playing: {self.queue[0][0]['title']}")
+            if ctx:
+                await ctx.send(f"Now playing: {self.queue[0][0]['title']}")
             self.queue.pop(0)
         else:
             self.is_playing = False
-            await ctx.send("No more songs in the queue.")
+            if ctx:
+                await ctx.send("No more songs in the queue.")
 
     @commands.command(name="play", aliases=["p", "playing"], help="Plays a selected song from youtube")
     async def play(self, ctx, *args):
