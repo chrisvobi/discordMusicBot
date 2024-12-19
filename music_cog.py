@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 from yt_dlp import YoutubeDL
@@ -38,7 +39,9 @@ class music_cog(commands.Cog):
                     self.is_playing = False
                     return
             elif self.vc.channel != self.queue[0][1]:
-                self.vc = await self.vc.move_to(self.queue[0][1])
+                await self.vc.disconnect()
+                self.vc = await self.queue[0][1].connect()
+            #await asyncio.sleep(1)
             if not self.vc.is_playing():
                 self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
                 self.is_playing = True
