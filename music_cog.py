@@ -55,11 +55,11 @@ class music_cog(commands.Cog):
 
     @commands.command(name="play", aliases=["p", "playing"], help="Plays a selected song from youtube")
     async def play(self, ctx, *args):
+        if not ctx.author.voice:
+            await ctx.send("Connect to a voice channel!")
+            return    
         query = " ".join(args)
         voice_channel = ctx.author.voice.channel
-        if voice_channel is None:
-            await ctx.send("Connect to a voice channel!")
-            return
         if self.is_paused:
             self.is_pause = False
         song = self.search_yt(query)
