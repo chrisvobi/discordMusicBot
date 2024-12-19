@@ -22,8 +22,8 @@ class music_cog(commands.Cog):
         if len(self.queue) > 0:
             self.is_playing = True
             m_url = self.queue[0][0]['source']
+            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.self.bot.loop.create_task(self.play_next()))
             self.queue.pop(0)
-            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
         else:
             self.is_playing = False
 
@@ -32,34 +32,38 @@ class music_cog(commands.Cog):
             self.is_playing = True
             m_url = self.queue[0][0]['source']
             if self.vc == None or not self.vc.is_connected():
-                self.vc = await self.queue[0][1].connect()
-                if self.vc == None:
-                    await ctx.send("Failed to join the channel.")
+                try:
+                    self.vc = await self.queue[0][1].connect()
+                except Exception as e:
+                    await ctx.send(f"Failed to join the channel: str{e}")
+                    self.is_playing = True
                     return
-            else:
+            elif self.vc.channel != self.queue[0][1]:
                 self.vc = await self.vc.move_to(self.queue[0][1])
-            self.queue.pop(0)
             self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
+            await ctx.send(f"Now playing: {self.queue[0][0]['title']}")
+            self.queue.pop(0)
         else:
             self.is_playing = False
+            await ctx.send("No more songs in the queue.")
 
     @commands.command(name="play", aliases=["p", "playing"], help="Plays a selected song from youtube")
-    async def p(self, ctx, *args):
+    async def play(self, ctx, *args):
         query = " ".join(args)
         voice_channel = ctx.author.voice.channel
         if voice_channel is None:
             await ctx.send("Connect to a voice channel!")
-        elif self.is_paused:
-            self.vc.resume()
+            return
+        if self.is_paused:
+            self.is_pause = False
+        song = self.search_yt(query)
+        if not song:
+            await ctx.send("Could not download the song. Incorrect format try another keyword.")
         else:
-            song = self.search_yt(query)
-            if type(song) == type(True):
-                await ctx.send("Could not download the song. Incorrect format try another keyword.")
-            else:
-                await ctx.send("Song added to the queue")
-                self.queue.append([song, voice_channel])
-                if self.is_playing == False:
-                    await self.play_music(ctx)
+            self.queue.append([song, voice_channel])
+            await ctx.send("Song added to the queue")
+            if self.is_playing == False:
+                await self.play_music(ctx)
 
     @commands.command(name="pause", help="Pauses the current song")
     async def pause(self, ctx):
