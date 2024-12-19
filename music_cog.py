@@ -107,8 +107,6 @@ class music_cog(commands.Cog):
     async def clear_queue(self, ctx):
         if self.vc != None and self.is_playing:
             self.queue = []
-            self.vc.stop()
-            self.is_playing = False
             await ctx.send("Queue cleared")
 
     @commands.command(name="leave", aliases=["disconnect", "l"], help="Leaves the voice channel")
