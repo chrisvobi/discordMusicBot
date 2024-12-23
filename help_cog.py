@@ -16,12 +16,6 @@ COMMANDS:
 !resume - resumes the current song
 ```
 """
-
-        self.text_channel_text = []
-
-    async def send_to_all(self, message):
-        for channel in self.text_channel_text:
-            await channel.send(message)
     
     @commands.command(name="help", help="Displays all available commands")
     async def help(self, ctx):
